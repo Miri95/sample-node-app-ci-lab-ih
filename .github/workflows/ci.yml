@@ -13,34 +13,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          node-version: '22'
-          cache: 'npm'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: npm install
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # This forces your username into the tag so Docker Hub can't deny it
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/frontendapp-node:latest
 
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: '{"clientId":"8f2c1ccb-6cd8-49c9-a941-90f46bdf134f","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"5a775aa2-0a21-483c-9818-460896054c2e","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
-      - name: Build and deploy to Container App
-        uses: azure/container-apps-deploy-action@v2
+      - name: Deploy to Azure Container Apps
+        uses: azure/CLI@v1
         with:
-          # Docker Hub Credentials
-          registryUrl: docker.io
-          registryUsername: ${{ secrets.DOCKERHUB_USERNAME }}
-          registryPassword: ${{ secrets.DOCKERHUB_TOKEN }}
-          
-          # Azure Target
-          resourceGroup: container-labs-miri-rg
-          containerAppName: frontendapp
-          
-          # Build Configuration
-          appSourcePath: ${{ github.workspace }}
-          dockerfilePath: Dockerfile
-          # This line is the fix: it forces the use of your username
-          imageToDeploy: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/frontendapp-node:${{ github.sha }}
+          inlineScript: |
+            az extension add --name containerapp --upgrade
+            az containerapp update \
+              --name frontendapp \
+              --resource-group container-labs-miri-rg \
+              --image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/frontendapp-node:latest
