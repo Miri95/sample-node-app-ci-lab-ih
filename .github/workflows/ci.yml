@@ -25,7 +25,6 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          # Direct credential string to avoid subscription lookup errors
           creds: '{"clientId":"8f2c1ccb-6cd8-49c9-a941-90f46bdf134f","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"5a775aa2-0a21-483c-9818-460896054c2e","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
       - name: Build and deploy to Container App
@@ -36,12 +35,12 @@ jobs:
           registryUsername: ${{ secrets.DOCKERHUB_USERNAME }}
           registryPassword: ${{ secrets.DOCKERHUB_TOKEN }}
           
-          # Azure Resource Details
+          # Azure Target
           resourceGroup: container-labs-miri-rg
           containerAppName: frontendapp
           
-          # Deployment Configuration
+          # Build Configuration
           appSourcePath: ${{ github.workspace }}
           dockerfilePath: Dockerfile
-          # The image name MUST include your username to avoid 'access denied'
+          # This line is the fix: it forces the use of your username
           imageToDeploy: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/frontendapp-node:${{ github.sha }}
