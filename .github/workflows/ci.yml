@@ -25,22 +25,23 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          # Using the specific Client ID and Subscription ID that we verified
+          # Direct credential string to avoid subscription lookup errors
           creds: '{"clientId":"8f2c1ccb-6cd8-49c9-a941-90f46bdf134f","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"5a775aa2-0a21-483c-9818-460896054c2e","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
       - name: Build and deploy to Container App
         uses: azure/container-apps-deploy-action@v2
         with:
-          # Registry Credentials
+          # Docker Hub Credentials
           registryUrl: docker.io
           registryUsername: ${{ secrets.DOCKERHUB_USERNAME }}
           registryPassword: ${{ secrets.DOCKERHUB_TOKEN }}
           
-          # Azure Target
+          # Azure Resource Details
           resourceGroup: container-labs-miri-rg
           containerAppName: frontendapp
           
-          # Build Configuration
+          # Deployment Configuration
           appSourcePath: ${{ github.workspace }}
           dockerfilePath: Dockerfile
+          # The image name MUST include your username to avoid 'access denied'
           imageToDeploy: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/frontendapp-node:${{ github.sha }}
